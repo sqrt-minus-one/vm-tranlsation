@@ -15,10 +15,10 @@ const PAGE_DIRECTORY_L3_SIZE = 1 << PAGE_DIRECTORY_L3_BITS;
 const PAGE_DIRECTORY_L4_SIZE = 1 << PAGE_DIRECTORY_L4_BITS;
 const PAGE_SIZE = (1 << PAGE_SIZE_BITS);
 
-const L1_MASK:   u64 = (PAGE_DIRECTORY_L1_SIZE - 1);
-const L2_MASK:   u64 = (PAGE_DIRECTORY_L2_SIZE - 1);
-const L3_MASK:   u64 = (PAGE_DIRECTORY_L3_SIZE - 1);
-const PAGE_MASK: u64 = (PAGE_SIZE - 1);
+const PAGE_DIRECTORY_L1_MASK:   u64 = (PAGE_DIRECTORY_L1_SIZE - 1);
+const PAGE_DIRECTORY_L2_MASK:   u64 = (PAGE_DIRECTORY_L2_SIZE - 1);
+const PAGE_DIRECTORY_L3_MASK:   u64 = (PAGE_DIRECTORY_L3_SIZE - 1);
+const OFFSET_MASK: u64 = (PAGE_SIZE - 1);
 
 const VALID_PAGE_BIT = (1 << 0);
 
@@ -63,10 +63,10 @@ const Virtual_Memory_Error = error
 pub fn translate_virt_addr(page_directory: *Page_Directory_L4, virt_addr: u64) Virtual_Memory_Error!u64
 {
   const l4_index = (virt_addr >> (PAGE_SIZE_BITS + PAGE_DIRECTORY_L1_BITS + PAGE_DIRECTORY_L2_BITS + PAGE_DIRECTORY_L3_BITS));
-  const l3_index = (virt_addr >> (PAGE_SIZE_BITS + PAGE_DIRECTORY_L1_BITS + PAGE_DIRECTORY_L2_BITS)) & L3_MASK;
-  const l2_index = (virt_addr >> (PAGE_SIZE_BITS + PAGE_DIRECTORY_L1_BITS)) & L2_MASK;
-  const l1_index = (virt_addr >> PAGE_SIZE_BITS) & L1_MASK;
-  const offset = virt_addr & PAGE_MASK;
+  const l3_index = (virt_addr >> (PAGE_SIZE_BITS + PAGE_DIRECTORY_L1_BITS + PAGE_DIRECTORY_L2_BITS)) & PAGE_DIRECTORY_L3_MASK;
+  const l2_index = (virt_addr >> (PAGE_SIZE_BITS + PAGE_DIRECTORY_L1_BITS)) & PAGE_DIRECTORY_L2_MASK;
+  const l1_index = (virt_addr >> PAGE_SIZE_BITS) & PAGE_DIRECTORY_L1_MASK;
+  const offset = virt_addr & OFFSET_MASK;
   
   if (page_directory.entries[l4_index]) |l3_entry|
   {
@@ -80,7 +80,7 @@ pub fn translate_virt_addr(page_directory: *Page_Directory_L4, virt_addr: u64) V
           return Virtual_Memory_Error.PageFault;
         }
         
-        const phys_address: u64 = ((physical_page & ~PAGE_MASK) | offset);
+        const phys_address: u64 = ((physical_page & ~OFFSET_MASK) | offset);
         return phys_address;
       }
     }
@@ -112,9 +112,9 @@ pub fn allocate_physical_page(page_directory: *Page_Directory_L4, allocator: std
   }
   
   const l4_index = (page_directory.next_virt_addr >> (PAGE_DIRECTORY_L1_BITS + PAGE_DIRECTORY_L2_BITS + PAGE_DIRECTORY_L3_BITS));
-  const l3_index = (page_directory.next_virt_addr >> (PAGE_DIRECTORY_L1_BITS + PAGE_DIRECTORY_L2_BITS)) & L3_MASK;
-  const l2_index = (page_directory.next_virt_addr >> PAGE_DIRECTORY_L1_BITS) & L2_MASK;
-  const l1_index = page_directory.next_virt_addr & L1_MASK;
+  const l3_index = (page_directory.next_virt_addr >> (PAGE_DIRECTORY_L1_BITS + PAGE_DIRECTORY_L2_BITS)) & PAGE_DIRECTORY_L3_MASK;
+  const l2_index = (page_directory.next_virt_addr >> PAGE_DIRECTORY_L1_BITS) & PAGE_DIRECTORY_L2_MASK;
+  const l1_index = page_directory.next_virt_addr & PAGE_DIRECTORY_L1_MASK;
   
   page_directory.next_virt_addr += 1;
   
